@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Review Website Annotations</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="copyright" content="&copy; 2022 Webis">
+    <link rel="icon" type="image/png" href="https://assets.webis.de/img/favicon.png">
+
+    <link rel="stylesheet" href="https://assets.webis.de/css/style.css">
+    <style>
+        [data-uk-lightbox] a {
+            cursor: zoom-in;
+        }
+
+        input[type="checkbox"] {
+            margin-right: .5em;
+        }
+
+        #annotation-screenshot-container {
+            height: 99vh;
+            position: relative;
+        }
+
+        #annotation-container {
+            height: 99vh;
+            position: relative;
+            overflow: auto;
+        }
+
+        #example-screenshot-container {
+            height: 80vh;
+            position: relative;
+            overflow: auto;
+        }
+
+        #annotation-screenshot-container .spinner {
+            position: absolute;
+            top: calc(50% - 50px);
+            left: calc(50% - 50px);
+        }
+
+        #annotation-screenshot {
+            height: 100%;
+        }
+
+        #annotation td {
+            vertical-align: middle;
+        }
+
+        #annotation td:not(:first-child) {
+            text-align: center;
+        }
+
+        [for="nav-skip-amount"] {
+            margin-left: 2.7em;
+            margin-right: .5em;
+        }
+
+        .uk-lightbox-items > * {
+            position: relative !important;
+        }
+
+        .uk-lightbox-items > * > * {
+            max-height: none !important;
+        }
+
+        .uk-lightbox-toolbar {
+            position: fixed !important;
+        }
+
+        .uk-lightbox-toolbar .uk-close {
+            margin-right: 2em;
+        }
+
+        .uk-text-success {
+            color: #008A12 !important;
+        }
+
+        .uk-lightbox {
+            overflow: auto;
+        }
+
+        .label-sub {
+            margin-left: 2.3em;
+        }
+
+        .hover-blue:hover {
+            color: #1e87f0
+        }
+
+        .highlight {
+          animation-name:bckanim;
+          animation-fill-mode:forwards;
+          animation-duration:1.5s;
+          animation-delay:0s;
+        }
+        @keyframes bckanim {
+          0% { background-color:transparent;}
+          10% {background-color:lightyellow;}
+          100% { background-color:transparent;}
+        }
+        /* Style for the disabled Next button */
+        .uk-button-disabled {
+            background-color: #dcdcdc;  /* Light grey background */
+            color: #a1a1a1;  /* Grey text */
+            cursor: not-allowed;  /* Prevent click */
+            border-color: #dcdcdc;  /* Grey border */
+        }
+
+        .uk-button-primary {
+            background-color: #007bff; /* Blue background when enabled */
+            color: #fff; /* White text when enabled */
+        }
+
+        .uk-button-default {
+            background-color: #f0f0f0;  /* Light grey background when not selected */
+            color: #000; /* Black text */
+        }
+        .uk-modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .uk-modal-dialog {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        /* Remove default bullet points from the list */
+        .uk-list {
+        list-style-type: none; /* Remove the bullets */
+        padding-left: 0; /* Remove the default padding */
+        }
+       
+
+    </style>
+</head>
+<body>
+<script src="https://assets.webis.de/js/thirdparty/uikit/uikit.min.js"></script>
+<script src="https://assets.webis.de/js/thirdparty/uikit/uikit-icons.min.js"></script>
+
+<main class="uk-section uk-padding-remove-vertical" id="app">
+
+   <!-- Modal for Instructions -->
+    <div v-if="showModal" id="instructionsModal" class="uk-modal uk-modal-container" data-uk-modal>
+        <div class="uk-modal-dialog uk-modal-body uk-padding-remove-horizontal">
+            <button class="uk-modal-close-default" type="button" data-uk-close @click="closeModal"></button>
+            <div class="uk-width-1-1 uk-text-center">
+                <h3>Instructions</h3>
+                <ul class="uk-list">
+                    <li>If the page <span class="uk-text-success uk-text-bold">is</span> a Review, assign it its <span class="uk-text-success">Quality Group (Great - Spam)</span>.</li>
+                    <li>If the page <span class="uk-text-warning uk-text-bold">is not</span> a Review, assign it Webshop, Buyer's Guide, or Other.</li>
+                    <li>If the page's screenshot is broken, determine the issue.</li>
+                    <li>Click <span data-uk-icon="icon: info"></span> to view examples.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div v-show="showThankYouModal" class="uk-modal uk-modal-container"  id="thankYouModal" data-uk-modal>
+        <div class="uk-modal-dialog uk-modal-body uk-padding-remove-horizontal">
+            <button class="uk-modal-close-default" type="button" data-uk-close @click="closeThankYouModal"></button>
+            <div class="uk-width-1-1 uk-text-center">
+                <h3>Thank you for your ratings!</h3>
+                <p>Your ratings have been successfully submitted.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="examples" class="uk-modal uk-modal-container" data-uk-modal>
+        <div class="uk-modal-dialog uk-modal-body uk-padding-remove-horizontal">
+            <button class="uk-modal-close-default" type="button" data-uk-close></button>
+            <div class="uk-width-1-1">
+                <div id="example-screenshot-container">
+                    <img :src="exampleUrl" alt="Example Screenshot" loading="lazy" >
+                </div>
+
+                <a v-show="exampleImages[currentExampleIndex].length > 1" class="uk-position-center-left uk-position-small uk-hidden-hover" @click="skipExampleImage(-1)" uk-icon="icon: chevron-left; ratio: 3"></a>
+                <a v-show="exampleImages[currentExampleIndex].length > 1" class="uk-position-center-right uk-position-small uk-hidden-hover" @click="skipExampleImage(1)" uk-icon="icon: chevron-right; ratio: 3"></a>
+
+            </div>
+            <div class="uk-overlay uk-overlay-primary uk-position-bottom uk-text-left">
+                <div v-show="currentExampleIndex===0">
+                    <h3 class="uk-text-lead">Great Reviews</h3>
+                    <ul>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Products were tested in person.">
+                            Tested <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews often test the products <em>in person</em>.
+                        </li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Some products are declared better than others. The reasons and ordering criteria are stated.">
+                            Curated <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews always curate and often rank the products.
+                        </li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Products (some or all) are directly compared in descriptions or tables. Better or worse is stated.">
+                            Compared <span uk-icon="icon: triangle-right"></span></span>
+                            Great Reviews often compare the products against the other listed ones in tables and in the descriptions. They sometimes test rigorously against shared test criteria.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Each product has a description. Descriptions are extensive and in-depth.">
+                            Comprehensive <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews often provide extensive and detailed product descriptions.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Page states the criteria to include products. Page states what makes the products good or bad.">
+                            Methodical <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews often state the quality criteria of their products.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Criteria are applied equally to all products. Test results (measurements etc.) are provided.">
+                            Objective <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews are always objective and apply their criteria consistently.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Product pictures are large and high quality. Product pictures show product in use or test method.">
+                            Illustrated <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews are often illustrated with custom images.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Expertise of the author is stated. External experts were asked. References are provided.">
+                            Expertise <span uk-icon="icon: triangle-up"></span></span>
+                            Great Reviews often state the authors' expertise, the external experts they consulted, and they provide external resources.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===1">
+                    <h3 class="uk-text-lead">Decent Reviews</h3>
+                    <ul>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Products were tested in person.">
+                            Tested <span uk-icon="icon: triangle-down"></span></span>
+                            Decent Reviews rarely test the products in person.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Some products are declared better than others. The reasons and ordering criteria are stated.">
+                            Curated <span uk-icon="icon: triangle-up"></span></span>
+                            Decent Reviews highlight the good products and explain, why others are worse. They sometimes rank the products.</li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Products (some or all) are directly compared in descriptions or tables. Better or worse is stated.">
+                            Compared <span uk-icon="icon: triangle-right"></span></span>
+                            Decent Reviews sometimes compare the products in the descriptions and often provide tables of specifications.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Each product has a description. Descriptions are extensive and in-depth.">
+                            Comprehensive <span uk-icon="icon: triangle-up"></span></span>
+                            Decent Reviews often provide great product descriptions.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Page states the criteria to include products. Page states what makes the products good or bad.">
+                            Methodical <span uk-icon="icon: triangle-up"></span></span>
+                            Decent Reviews often state good and bad features.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Criteria are applied equally to all products. Test results (measurements etc.) are provided.">
+                            Objective <span uk-icon="icon: triangle-up"></span></span>
+                            Decent Reviews are objective and review according to their criteria.</li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Product pictures are large and high quality. Product pictures show product in use or test method. ">
+                            Illustrated <span uk-icon="icon: triangle-right"></span></span>
+                            Decent Reviews sometimes use non-promotional, non-stock pictures.</li>
+                        <li><span class="uk-text-success uk-text-bold" uk-tooltip="title: Expertise of the author is stated. External experts were asked. References are provided.">
+                            Expertise <span uk-icon="icon: triangle-up"></span></span>
+                            Decent Reviews often state the authors expertise and sometimes provide external sources.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===2">
+                    <h3 class="uk-text-lead">Poor Reviews</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Products were tested in person.">
+                            Tested <span uk-icon="icon: triangle-down"></span></span>
+                            Poor Reviews never test the products in person.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Some products are declared better than others. The reasons and ordering criteria are stated.">
+                            Curated <span uk-icon="icon: triangle-down"></span></span>
+                            Poor Reviews rarely curate products. They only know winners ('best in ...').</li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Products (some or all) are directly compared in descriptions or tables. Better or worse is stated.">
+                            Compared <span uk-icon="icon: triangle-right"></span></span>
+                            Poor Reviews sometimes provide tables of specifications but rarely more.</li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Each product has a description. Descriptions are extensive and in-depth.">
+                            Comprehensive <span uk-icon="icon: triangle-right"></span></span>
+                            Poor Reviews often provide only marketing text and specifications as descriptions.</li>
+                        <li><span class="uk-text-warning uk-text-bold" uk-tooltip="title: Page states the criteria to include products. Page states what makes the products good or bad.">
+                            Methodical <span uk-icon="icon: triangle-right"></span></span>
+                            Poor Reviews often provide brief and shallow pro-con-tables. They sometimes state very general quality criteria.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Criteria are applied equally to all products. Test results (measurements etc.) are provided.">
+                            Objective <span uk-icon="icon: triangle-down"></span></span>
+                            Poor Reviews are rarely objective. What is good for one product may not matter for another one.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Product pictures are large and high quality. Product pictures show product in use or test method. ">
+                            Illustrated <span uk-icon="icon: triangle-down"></span></span>
+                            Poor Reviews only use promotional and stock pictures.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Expertise of the author is stated. External experts were asked. References are provided.">
+                            Expertise <span uk-icon="icon: triangle-down"></span></span>
+                            Poor Reviews rarely state the expertise used. Sometimes, a broad statement (e.g. 'tech journalist') is made.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===3">
+                    <h3 class="uk-text-lead">Spam Reviews</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Products were tested in person.">
+                            Tested <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews never test the products.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Some products are declared better than others. The reasons and ordering criteria are stated.">
+                            Curated <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews rarely curate or order products. Often, the Products are enumerated.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Products (some or all) are directly compared in descriptions or tables. Better or worse is stated.">
+                            Compared <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews rarely compare products.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Each product has a description. Descriptions are extensive and in-depth.">
+                            Comprehensive <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews often provide only specifications or marketing text as descriptions.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Page states the criteria to include products. Page states what makes the products good or bad.">
+                            Methodical <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews rarely state a methodology for selection or curation.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Criteria are applied equally to all products. Test results (measurements etc.) are provided.">
+                            Objective <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews rarely have objective rating criteria.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Product pictures are large and high quality. Product pictures show product in use or test method. ">
+                            Illustrated <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews only use promotional (sales) pictures.</li>
+                        <li><span class="uk-text-danger uk-text-bold" uk-tooltip="title: Expertise of the author is stated. External experts were asked. References are provided.">
+                            Expertise <span uk-icon="icon: triangle-down"></span></span>
+                            Spam Reviews rarely reference expertise. They sometimes (wrongly) claim expertise.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===4">
+                    <h3 class="uk-text-lead">Webshops</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>Shop pages that list offered items.</li>
+                        <li>Manufacturer pages that also offer products.</li>
+                        <li>Product search engines that show meta-reviews of price comparisons.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===5">
+                    <h3 class="uk-text-lead">Buyer's Guides</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>The page explains the product category. No individual products are presented!</li>
+                        <li>Nothing can be purchased.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===6">
+                    <h3 class="uk-text-lead">Other Websites</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>This page is <b>neither</b> Review, Shop, or Guide.</li>
+                        <li>YouTube, Pinterest, Manufacturer pages that are not shops, ...</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===7">
+                    <h3 class="uk-text-lead">Ad or Banner Overlays</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>An overlay (Ads, Cookie-Banner, Newsletter) hides most of the page.</li>
+                        <li>If the overlay is not disruptive, you can ignore it.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===8">
+                    <h3 class="uk-text-lead">Error Message:</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>Any error is shown instead of a page.</li>
+                    </ul>
+                </div>
+                <div v-show="currentExampleIndex===9">
+                    <h3 class="uk-text-lead">Missing Images or Broken Design</h3>
+                    <ul class="uk-list uk-list-circle uk-list-muted">
+                        <li>The style or design is visibly broken.</li>
+                        <li>Most images are missing.</li>
+                    </ul>
+                </div>
+                <div>
+                    <b>Here:</b>&nbsp;{{ exampleTitle }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="uk-container uk-container-expand uk-padding-remove">
+        <div class="uk-grid" data-uk-grid>
+            <div class="uk-width-expand" id="annotation-screenshot-container">
+                <div class="uk-overflow-auto" id="annotation-screenshot" data-uk-lightbox>
+                    <a :href="currentScreenshot"><img v-show="!showSpinner" :data-src="currentScreenshot" data-uk-img alt="Screenshot" @onload="imageLoaded"></a>
+                </div>
+                <span v-if="showSpinner" uk-spinner="ratio: 3" class="spinner"></span>
+            </div>
+
+            <div class="uk-width-large" id="annotation-container">
+                <div class="uk-padding-small" data-uk-grid>
+                    <div class="uk-width-1-1">
+                        <div class="uk-card uk-card-default">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title" data-uk-toggle="target: #instructions; animation: uk-animation-fade">
+                                    Instructions
+                                    <a href="#" class="uk-modal-close-default" data-uk-icon="icon: shrink"></a>
+                                </h3>
+                            </div>
+                            <div class="uk-card-body" id="instructions">
+                                Rate the Quality of Review Websites!
+                                <ul class="uk-list uk-list-circle uk-list-muted">
+                                    <li>If the page <span class="uk-text-success uk-text-bold">is</span> a Review, assign it its <span class="uk-text-success">Quality Group (Great - Spam)</span>. Also determine the number of featured products.</li>
+                                    <li>If the page <span class="uk-text-warning uk-text-bold">is not</span> a Review at all, assign it either <span class="uk-text-warning">Webshop, Buyers guide, or Other</span>.</li>
+                                    <li>If the page's <span class="uk-text-danger uk-text-bold">screenshot is broken</span>, determine the issue.</li>
+                                    <li>Click <span data-uk-icon="icon: info"></span> to view examples.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="uk-width-1-1 uk-margin-small-top">
+                     <div class="uk-card uk-card-default">
+                        <div class="uk-card-body">
+                            <div>
+                                <!-- <div class="uk-margin-small-bottom">You searched for <b>{{ currentQuery }}</b></div> -->
+                                <span>This <span class="uk-text-success uk-text-bold">is a review</span>  website, it rates the best products in a category.</span>
+                                <table class="uk-table uk-table-small uk-table-middle uk-table-justify uk-margin-remove-top" :class="{ 'highlight': isAReviewSelected }">
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio1" value="class-1" id="cb-class-1" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal">
+                                            <label class="uk-form-label" for="cb-class-1">
+                                                <div class="uk-text-success">Great Review with Test</div>
+                                                <div class="uk-text-muted">Extensive (physical) tests made by experts. </div>
+                                            </label>
+                                        </td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=0; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio1" value="class-2" id="cb-class-2" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal">
+                                            <label class="uk-form-label" for="cb-class-2">
+                                                <div class="uk-text-success">Decent Review</div>
+                                                <div class="uk-text-muted">Informed, detailed product comparison. </div>
+                                            </label>
+                                        </td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=1; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio1" value="class-3" id="cb-class-3" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal">
+                                            <label class="uk-form-label"for="cb-class-3">
+                                                <div class="uk-text-success">Poor Review</div>
+                                                <div class="uk-text-muted">Loose collection with shallow descriptions.</div>
+                                            </label>
+                                        </td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=2; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio1" value="class-4" id="cb-class-4" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal">
+                                            <label class="uk-form-label" for="cb-class-4">
+                                                <div class="uk-text-success">Spam Review</div>
+                                                <div class="uk-text-muted">Generic lists and tables.</div>
+                                            </label>
+                                        </td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=3; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                </table>
+
+                                <!-- <span class="uk-margin-small">Number of products featured:</span>
+                                <table class="uk-table uk-table-small uk-table-middle uk-table-justify uk-margin-remove-top" :class="{ 'highlight': isAProductSelected }">
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-single" id="cb-count-single" v-model="counts[currentPageIndex]" @click="productCountRadioSelectedHandler()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-single"> Exactly 1 </label></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-multi" id="cb-count-multi" v-model="counts[currentPageIndex]" @click="productCountRadioSelectedHandler()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-multi"> At least 2</label></td>
+                                    </tr>
+                                </table> -->
+                            </div>
+                            <hr class="uk-width-expand">
+                            <div>
+                                <span>This <b class="uk-text-warning">is not a review</b> website.</span>
+                                <table class="uk-table uk-table-small uk-table-middle uk-table-justify uk-margin-remove-top">
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-webshop" id="cb-count-webshop" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-webshop"> Webshop or product search engine</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=4; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-guide" id="cb-count-guide" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-guide"> Buyer's guide (no products compared)</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=5; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-other" id="cb-count-other" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-other">Other Websites</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=6; exampleImageIndex=0"></a></td>
+                                        <td></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <hr class="uk-width-expand">
+                            <div>
+                                <span>This <span class="uk-text-danger uk-text-bold">screenshot is incomplete or broken.</span></span>
+                                <table class="uk-table uk-table-small uk-table-middle uk-table-justify uk-margin-remove-top uk-margin-remove-bottom">
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-banner" id="cb-count-banner" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-banner">Ad or banner overlay</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=7; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-error" id="cb-count-error" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-error"> Error message shown</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=8; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="uk-table-shrink"><input class="uk-radio" type="radio" name="radio2" value="count-broken" id="cb-count-broken" v-model="annotations[currentPageIndex]" @change="shakeProductCountRadio()"></td>
+                                        <td class="uk-padding-remove-horizontal"><label class="uk-form-label" for="cb-count-broken">Missing images or broken design</label></td>
+                                        <td><a class="hover-blue" data-uk-icon="icon: info" data-uk-toggle="target: #examples; animation" @click="currentExampleIndex=9; exampleImageIndex=0"></a></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="uk-card-footer">
+                            <div>
+                                <label for="progress">Progress: <span id="annotations-done">{{ completedAssignmentCount }}</span>/<span id="annotations-total">{{ screenshots.length }}</span> (current task: <span id="annotations-current-task">{{ currentPageIndex+1}} <span v-if="isCompleted[currentPageIndex]" uk-icon="icon: check"></span> </span>)</label>
+                                <progress id="progress" class="uk-progress uk-margin-remove-top" :value="completedAssignmentCount" :max="screenshots.length"></progress>
+                            </div>
+                            <div class="uk-clearfix">
+                                <a class="uk-button uk-margin-remove" 
+                                @click="previousScreenshot"
+                                :class="{ 'uk-button-default': currentPageIndex <= 0, 'uk-button-primary': currentPageIndex > 0 }"
+                                data-uk-icon="chevron-left">
+                                </a>
+
+                                <!-- Submit Button -->
+                                <a class="uk-button uk-margin-remove uk-width-2-5"
+                                @click="submitRatings"
+                                :disabled="!isSubmitEnabled"
+                                :class="{ 'uk-button-default': !isSubmitEnabled, 'uk-button-primary': isSubmitEnabled }">
+                                Submit
+                                </a>
+
+                               <!-- Next Button -->
+                                <a class="uk-button uk-margin-remove"
+                                @click="nextScreenshot"
+                                :class="{
+                                    'uk-button-default': !isNextEnabled,  
+                                    'uk-button-primary': isNextEnabled,   
+                                    'uk-button-disabled': !isNextEnabled 
+                                }" 
+                                data-uk-icon="chevron-right"
+                                :disabled="!isNextEnabled"
+                                :style="{
+                                    'pointer-events': isNextEnabled ? 'auto' : 'none',  
+                                    'opacity': isNextEnabled ? 1 : 0.5   
+                                }">
+                                </a>
+
+
+
+
+
+
+                                <!-- <a class="uk-button uk-margin-remove" @click="skipTask(-1)" :class="{ 'uk-button-default': currentPageIndex <= 0, 'uk-button-primary': currentPageIndex > 0}" data-uk-icon="chevron-left"></a>
+                                <a class="uk-button uk-margin-remove uk-width-2-5" :class="{ 'uk-button-default': completedAssignmentCount < annotations.length, 'uk-button-primary': completedAssignmentCount === annotations.length}" @click="submitRatings" 
+                                :disabled="!isSubmitEnabled" >Submit</a>
+                                <a class="uk-button uk-margin-remove"  @click="nextScreenshot" :disabled="!isNextEnabled"  :class="{ 'uk-button-default': !canSkipAhead, 'uk-button-primary': canSkipAhead}" data-uk-icon="chevron-right"></a> -->
+                            </div>
+                            <!-- <div v-if="completedAssignmentCount === annotations.length">
+                                <span>Leave a Comment (optional):</span>
+                                <textarea class="uk-textarea" v-model="comment"></textarea>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://unpkg.com/vue@3"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css" integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+<script>
+    // const WEBSITE_IDS = ["${PAGE0_ID}","${PAGE1_ID}","${PAGE2_ID}","${PAGE3_ID}","${PAGE4_ID}","${PAGE5_ID}","${PAGE6_ID}","${PAGE7_ID}","${PAGE8_ID}","${PAGE9_ID}"];
+    // const WEBSITE_QUERIES = ["${PAGE0_QUERY}","${PAGE1_QUERY}","${PAGE2_QUERY}","${PAGE3_QUERY}","${PAGE4_QUERY}","${PAGE5_QUERY}","${PAGE6_QUERY}","${PAGE7_QUERY}","${PAGE8_QUERY}","${PAGE9_QUERY}"];
+    const HIT_ID = "${HIT_ID}"
+    const NUMBER_OF_PAGES = 30
+    // const WEBSITE_IDS = ["hit-0/query-66-hit-0.jpg","hit-1/query-66-hit-1.jpg","hit-2/query-66-hit-2.webp","hit-3/query-66-hit-3.jpg","hit-4/query-66-hit-4.webp","hit-5/query-66-hit-5.webp"
+    // ,"hit-6/query-66-hit-6.webp","hit-7/query-66-hit-7.webp","hit-8/query-66-hit-8.webp","hit-9/query-66-hit-9.webp"];  // FOR TESTING
+    const WEBSITE_IDS = ["hit-0/query-66-hit-0.jpg","hit-1/query-66-hit-1.jpg","hit-2/query-66-hit-2.webp","hit-3/query-66-hit-3.jpg","hit-4/query-66-hit-4.webp","hit-5/query-66-hit-5.webp"
+    ,"hit-6/query-66-hit-6.webp","hit-7/query-66-hit-7.webp","hit-8/query-66-hit-8.webp","hit-9/query-66-hit-9.webp"];  // FOR TESTING
+    const WEBSITE_QUERIES = ["BEST 0", "BEST 1", "BEST 2", "BEST 3", "BEST 4", "BEST 5", "BEST 6", "BEST 7", "BEST 8", "BEST 9"];
+    const FILE_URL = 'https://files.webis.de/data-in-progress/data-research/web-search/website-screenshots/screenshots-v1/%';
+    const EXAMPLE_URL = 'https://files.webis.de/data-in-progress/data-research/web-search/website-screenshots/examples-jpg/%';
+</script>
+<script>
+    const { createApp,reactive } = Vue
+    const app = createApp({
+        data() {
+            return {
+                currentPageIndex: 0,
+                currentExampleIndex: 0,
+                exampleImageIndex: 0,
+                exampleImages: [
+                    ["decent2.jpg"], // great
+                    ["decent1.jpg"],
+                    ["poor1.jpg", "poor2.jpg", "poor3.jpg", "poor4.jpg", "poor5.jpg",],
+                    ["spam1.jpg"],
+                    ["webshop1.jpg", "webshop2.jpg", "webshop3.jpg", "webshop4.jpg"], // webshop
+                    ["guide1.jpg", "guide2.jpg"], // guide
+                    ["other1.jpg", "other2.jpg"],
+                    ["banner1.jpg", "banner2.jpg", "banner3.jpg"], //overlay
+                    ["error1.jpg", "error2.jpg"], // error
+                    ["broken1.jpg", "broken2.jpg", "broken3.jpg", "broken4.jpg", "broken5.jpg"]], // broken design,
+                exampleTitles: [
+                    ["A lamp review. Highlighted products were tested in person. Criteria are stated. Consulted experts are stated. Losers are stated (the competition). Sources are provided."], // great
+                    ["A lamp review. Experts are stated. General review criteria are mentioned beforehand. The descriptions of each product compare and reference the other products. This page is closet to poor than to great."],
+                    ["A poor guitar pickup review. The article at the bottom describes the features of pickups. It is not mentioned, how the products were selected or ranked.",
+                        "A lamp review. Each product is 'best' in it's own category.",
+                        "A lamp review. Much of the page is general information. Only review content is the 2-sentence 'Why We Picked It' section.",
+                        "A brush review. Each product is 'best' in it's own category. Descriptions are either marketing material or generic for the category.",
+                        "A loose collection of makeup tools.",],
+                    ["A website generated from an amazon search for 'Mtb Headsets'"],
+                    ["A shop page offering check presenters.", "A manufacturer page offering address labels.", "A shop offering drives.", "Results of a product search engine."], // webshop
+                    ["A description of the features and properties of underfloor heating systems.", "A how to on floor screeding."], // guide
+                    ["A list of items useful for cycling.", "A manufacturer's page offering services."],
+                    ["Instead of the page, an entry banner was captured.", "A captcha was captured.", "A newsletter banner hides part of the page. If if overlay is minimal, annotate the page as usual."], //overlay
+                    ["Page was not accessed due to a security issue.", "Access to the page was denied."], // error
+                    ["All text and icons are invisible.", "All images (except the title image) are missing.", "All images are missing.", "The content is not formatted.", "The content was not loaded."]], // broken design
+                currentScreenshot: "",
+                annotations: new Array(NUMBER_OF_PAGES).fill(null),
+                counts: new Array(NUMBER_OF_PAGES).fill(null),
+                times: new Array(NUMBER_OF_PAGES).fill(0),
+                lastTimestamp: null,
+                showSpinner: true,
+                comment: "",
+                isAProductSelected: false,
+                isAReviewSelected: false,
+                screenshots: [],  // Array of screenshot URLs from the backend
+                ratings:  reactive({}),  // Store user ratings { "screenshot_1.png": 5, ... }
+                currentUser: "User1",  // Set user dynamically if needed
+                userRatingsCount: 0,  // Track the number of ratings the current user has made
+                showModal: true,
+                showThankYouModal: false,
+            }
+        },
+        mounted() {
+            this.lastTimestamp = performance.now()
+            this.loadScreenshots()
+            this.loadImage()
+            UIkit.modal('#instructionsModal').show();
+        },
+        methods: {
+            skipTask(skip) {
+                if (skip === 1 && ! this.isCompleted(this.currentPageIndex) ){
+                    return
+                }
+                let newExample = skip + this.currentPageIndex
+                if (newExample < 0 || newExample >= this.annotations.length){
+                    return
+                }
+                this.times[this.currentPageIndex] += Math.round(performance.now() - this.lastTimestamp)
+                this.lastTimestamp = performance.now()
+                this.currentPageIndex = newExample
+                this.loadImage()
+            },
+            skipExampleImage(skip) {
+                this.exampleImageIndex = Math.abs((this.exampleImageIndex + skip) % (this.exampleImages[this.currentExampleIndex].length))
+                console.log(this.exampleImageIndex)
+            },
+            closeModal() {
+                this.showModal = false; // Close the modal when the close button is clicked
+            },
+            loadImage() {
+                const currentScreenshot = this.screenshots[this.currentPageIndex];
+                console.log("Loading screenshot:", currentScreenshot);
+                this.currentScreenshot = currentScreenshot;
+            },
+            previousScreenshot() {
+                if (this.currentPageIndex > 0) {
+                    this.currentPageIndex--;
+                    this.loadImage();
+                }
+            },
+            submit() {
+                fetch('/rate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user: this.currentUser,  // Set the user (e.g., "User1")
+                        ratings: this.ratings   // Object { "screenshot_1.png": 5, "screenshot_2.png": 3, ... }
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Ratings saved:", data);
+                })
+                .catch(error => console.error("Error saving ratings:", error));
+                        },
+                        selected(element) {
+                            return element === this.annotations[this.currentPageIndex];
+
+            },
+            loadScreenshots() {
+                fetch('/screenshots')  // Fetch screenshots from the backend
+                    .then(response => response.json())
+                    .then(data => {
+                        // Store the screenshots in the 'screenshots' array
+                        if (data.screenshots && data.screenshots.length > 0) {
+                            this.screenshots = data.screenshots;
+                            this.currentScreenshot = this.screenshots[this.currentPageIndex];  // Set the first screenshot
+                        } else {
+                            console.error("No screenshots available.");
+                        }
+                        this.showSpinner = false;  // Hide the loading spinner
+                    })
+                    .catch(error => {
+                        console.error("Error fetching screenshots:", error);
+                    });
+            },
+            loadImage() {
+                const currentScreenshot = this.screenshots[this.currentPageIndex];
+                console.log("Loading screenshot:", currentScreenshot);  // Debug log
+                this.currentScreenshot = currentScreenshot; 
+            },
+            imageLoaded() {
+                console.log('loaded called')
+                this.showSpinner=false
+            },
+            setClass(value) {
+                this.annotations[this.currentPageIndex] = value
+            },
+            async shakeProductCountRadio() {
+                        
+                // Only select a rating if the current screenshot's rating is not null
+                const currentScreenshot = this.screenshots[this.currentPageIndex];
+                const selectedRating = this.annotations[this.currentPageIndex];
+
+                // Store the selected rating
+                if (selectedRating !== null) {
+                    this.selectRating(selectedRating);
+                }
+                
+                // Deselect product count if a new selection is made.
+                this.deselectProductCountRadio();
+            },
+
+            async shakeIsAReviewRadio() { //
+                if (this.counts[this.currentPageIndex] === null) {
+                    this.isAReviewSelected = true
+                    await new Promise(r => setTimeout(r, 2000));
+                    this.isAReviewSelected = false
+                }
+            },
+            productCountRadioSelectedHandler() { // count field has been selected
+                if (!this.isAReview(this.currentPageIndex)) {
+                    this.annotations[this.currentPageIndex] = null
+                    this.shakeIsAReviewRadio()
+                }
+            },
+            deselectProductCountRadio() {
+                this.counts[this.currentPageIndex] = null
+            },
+            isAReview(ind){
+                return ["class-1", "class-2", "class-3", "class-4"].includes(this.annotations[ind])
+            },
+            isCompleted(ind){
+                if (this.isAReview(ind) && this.counts[ind] !== null){
+                    return true
+                } else if (!this.isAReview(ind) && this.annotations[ind] !== null) {
+                    return true
+                }
+                return false
+            },
+           
+            // Select the rating for the current screenshot
+            selectRating(rating) {
+                const currentScreenshot = this.screenshots[this.currentPageIndex];
+                const screenshotName = currentScreenshot.split('/').pop();
+
+                // Initialize rating for screenshot if it doesn't exist
+                if (!this.ratings[screenshotName]) {
+                    this.ratings[screenshotName] = {};
+                }
+
+                // Save the rating for the current user
+                this.ratings[screenshotName][this.currentUser] = rating;
+                this.saveRatingToCSV(screenshotName, rating);
+            },
+
+
+            // Navigate to the next screenshot
+            nextScreenshot() {
+                const currentScreenshot = this.screenshots[this.currentPageIndex]?.split('/').pop();  // Get the filename of the current screenshot
+                console.log("Next button clicked! Current index:", this.currentPageIndex);
+                console.log("Screenshots available:", this.screenshots.length);
+                console.log("Current screenshot:", currentScreenshot);
+                console.log("Current ratings:", this.ratings);
+
+                // Check if a rating has been selected for the current screenshot
+                if (!this.ratings[currentScreenshot]) {
+                    console.warn("You must select a rating before proceeding.");
+                    return;  // Stop if no rating is selected
+                }
+
+                // Move to the next screenshot if there are more left
+                if (this.currentPageIndex < this.screenshots.length - 1) {
+                    this.currentPageIndex++;
+                    this.loadImage();  // Load the next screenshot
+                } else {
+                    console.warn("You have reached the last screenshot.");
+                }
+            },
+
+            submitRatings() {
+                const currentScreenshot = this.screenshots[this.currentPageIndex]?.split('/').pop();  // Get the screenshot filename
+                const currentRating = this.annotations[this.currentPageIndex];  // Get the selected rating
+
+                if (!currentScreenshot || !currentRating) {
+                    console.error("Missing screenshot or rating data");
+                    return;  // If there's no screenshot or rating, don't send the request
+                }
+
+                // Debugging the data being sent
+                console.log("Data being sent:", {
+                    user: 'User1',  // Since only User1 is submitting ratings
+                    screenshot: currentScreenshot,  // Screenshot filename
+                    rating: currentRating  // Selected rating (e.g., "class-1")
+                });
+
+                fetch('/rate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user: 'User1',  // Since only User1 is submitting ratings
+                        screenshot: currentScreenshot,  // Screenshot filename
+                        rating: currentRating  // Selected rating (e.g., "class-1")
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Ratings saved:", data);
+                    this.showThankYouModal = true;
+                    this.$nextTick(() => {
+                        UIkit.modal('#thankYouModal').show();  // Open the modal using UIkit
+                    });
+                })
+                .catch(error => {
+                    console.error("Error saving ratings:", error);
+                });
+
+            },
+            closeThankYouModal() {
+                this.showThankYouModal = false;  // Set the modal visibility to false
+            },
+            saveRatingToCSV(screenshotName, rating) {
+                fetch('/rate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user: this.currentUser,  // Send the user (e.g., "User1")
+                        screenshot: screenshotName,  // Send the screenshot name
+                        rating: rating,  // Send the rating
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Rating saved:", data);
+                })
+                .catch(error => {
+                    console.error("Error saving rating:", error);
+                });
+            }
+        },
+        computed: {
+            completedAssignmentCount() {
+                return Object.keys(this.ratings).length;  // Count how many screenshots have a rating
+            },
+
+            // Calculate the progress percentage (0-100)
+            progressPercentage() {
+                return (this.completedAssignmentCount / this.screenshots.length) * 100;
+            },
+            canSkipAhead() {
+                return this.isCompleted(this.currentPageIndex) && this.currentPageIndex + 1 <= this.annotations.length
+            },
+            exampleUrl() {
+                return EXAMPLE_URL.replace('%', this.exampleImages[this.currentExampleIndex][this.exampleImageIndex])
+                // return this.exampleImages[this.currentExampleIndex].map((name, ind) => {
+                //     return EXAMPLE_URL.replace('%', name)
+                // })
+            },
+            currentQuery(){
+                return WEBSITE_QUERIES[this.currentPageIndex]
+            },
+            exampleTitle() {
+                return this.exampleTitles[this.currentExampleIndex][this.exampleImageIndex]
+            },
+            isNextEnabled() {
+                const currentScreenshot = this.screenshots[this.currentPageIndex]?.split('/').pop();
+                return !!this.ratings[currentScreenshot] || this.annotations[this.currentPageIndex] !== null;
+       
+            },
+            isSubmitEnabled() {
+                return Object.keys(this.ratings).length === this.screenshots.length;  // Enable if all screenshots are rated
+            }
+        },
+    })
+    app.mount('#app')
+</script>
+</body>
+</html>

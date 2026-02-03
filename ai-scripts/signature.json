@@ -1,0 +1,38 @@
+{
+  "vectorizer": {
+    "type": "CountVectorizer",
+    "ngram_range": [
+      1,
+      2
+    ],
+    "analyzer": "word",
+    "lowercase": true,
+    "max_features": 10000,
+    "stop_words": null,
+    "vocabulary_size": 10000,
+    "vocabulary_hash": "cd13c72c0abce8754a7ccf6c1741944e654bfc37fa1ad1a108f47786b8b49158"
+  },
+  "model": {
+    "type": "LogisticRegression",
+    "classes_": "9d34149fbd1fe777eb238799054c8cbfbce372255f219f8740838def9bfd02db",
+    "coef_": "5e218a814e5f767785a7a4ab77663fd9fc918cfef69dee24d3418e67c1e525ca",
+    "intercept_": "4f59da36acffd19a1662149a69fc1ded699eef71c502e5a05e1c36a506e4d1fd",
+    "hyperparams_hash": "16f83a319765071b7826e78d7e1b23d3333cb8ee172bb202ff0ea6744b397a1c"
+  },
+  "meta": {
+    "chosen": "Logistic Regression + TF",
+    "val_f1_macro": 1.0,
+    "seed": 42,
+    "threshold": 0.5,
+    "sizes": {
+      "train": 1739,
+      "val": 217,
+      "test": 218,
+      "total": 2174
+    },
+    "class_balance_total": {
+      "AI(0)": 1087,
+      "Human(1)": 1087
+    }
+  }
+}

@@ -1,0 +1,27 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# data
+*.csv
+*.parquet
+*.jsonl
+*.tsv
+
+# models/checkpoints
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+bert-spam-model/
+checkpoints/
+
+# outputs
+logs/
+outputs/
+results/
+runs/
+
+# screenshots (optional)
+rating/screenshots-*/

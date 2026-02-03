@@ -1,0 +1,16 @@
+{
+  "chosen": "Logistic Regression + TF",
+  "val_f1_macro": 1.0,
+  "seed": 42,
+  "threshold": 0.5,
+  "sizes": {
+    "train": 1739,
+    "val": 217,
+    "test": 218,
+    "total": 2174
+  },
+  "class_balance_total": {
+    "AI(0)": 1087,
+    "Human(1)": 1087
+  }
+}

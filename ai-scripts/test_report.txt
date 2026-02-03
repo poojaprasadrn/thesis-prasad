@@ -1,0 +1,19 @@
+=== HELD-OUT TEST (10%) ===
+Model: Logistic Regression + TF
+
+Accuracy: 0.5550
+F1-macro: 0.4452
+
+Confusion matrix (rows=true, cols=pred) [0=AI,1=Human]:
+[[109   0]
+ [ 97  12]]
+
+              precision    recall  f1-score   support
+
+          AI       0.53      1.00      0.69       109
+       Human       1.00      0.11      0.20       109
+
+    accuracy                           0.56       218
+   macro avg       0.76      0.56      0.45       218
+weighted avg       0.76      0.56      0.45       218
+

@@ -1,0 +1,17 @@
+LogReg + Count(1-2,10k)
+Accuracy: 0.9931 | F1-macro: 0.9931 | Macro P/R/F1: 0.9932/0.9931/0.9931
+ROC-AUC: 0.9988
+
+Confusion matrix [rows=true, cols=pred] (0=AI,1=Human):
+[[218   0]
+ [  3 214]]
+
+              precision    recall  f1-score   support
+
+          AI       0.99      1.00      0.99       218
+       Human       1.00      0.99      0.99       217
+
+    accuracy                           0.99       435
+   macro avg       0.99      0.99      0.99       435
+weighted avg       0.99      0.99      0.99       435
+

@@ -1,0 +1,17 @@
+SVC-lin + Count(1-2,10k)
+Accuracy: 0.9862 | F1-macro: 0.9862 | Macro P/R/F1: 0.9863/0.9862/0.9862
+ROC-AUC: 0.9987
+
+Confusion matrix [rows=true, cols=pred] (0=AI,1=Human):
+[[216   2]
+ [  4 213]]
+
+              precision    recall  f1-score   support
+
+          AI       0.98      0.99      0.99       218
+       Human       0.99      0.98      0.99       217
+
+    accuracy                           0.99       435
+   macro avg       0.99      0.99      0.99       435
+weighted avg       0.99      0.99      0.99       435
+
